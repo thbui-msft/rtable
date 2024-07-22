@@ -249,7 +249,7 @@ namespace Microsoft.Azure.Toolkit.Replication
                         }
 
                         // Check if vertual Etag matches at the head replica. We don't need to match it every replica.
-                        if ((row.ETag != new ETag(currentRow._rtable_Version.ToString())) && (index == 0))
+                        if (IsEtagMismatchInternal(row, currentRow) && (index == 0))
                         {
                             // Return the error code that Etag does not match with the input ETag
                             ReplicatedTableLogger.LogInformational("TransformOp(): Etag does not match. row.ETag ({0}) != currentRow._rtable_Version ({1})",
@@ -2717,7 +2717,7 @@ namespace Microsoft.Azure.Toolkit.Replication
 
         private bool IsEtagMismatch(IReplicatedTableEntity row, IReplicatedTableEntity currentRow)
         {
-            bool mismatch = row.ETag != new ETag(currentRow._rtable_Version.ToString());
+            bool mismatch = IsEtagMismatchInternal(row, currentRow);
 
             if (this._configurationWrapper.IsConvertToRTableMode() == false)
             {
@@ -2736,6 +2736,12 @@ namespace Microsoft.Azure.Toolkit.Replication
             }
 
             return false;
+        }
+
+        private bool IsEtagMismatchInternal(IReplicatedTableEntity row, IReplicatedTableEntity currentRow)
+        {
+            var validETag = long.TryParse(row.ETag.ToString().Trim('\"'), out long eTag);
+            return !(validETag && eTag == currentRow._rtable_Version);
         }
 
         private IList<TableResult> TransactionResponseToTableResultList(Response<IReadOnlyList<Response>> resp, IEnumerable<TableTransactionAction> transactionActions)
