@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Toolkit.Replication
             this.ReadTailIndex = TailIndex;
         }
 
-        public static View InitFromConfigVer1(string name, ReplicatedTableConfigurationStore configurationStore, Action<ReplicaInfo> SetConnectionString)
+        public static View InitFromConfigVer1(string name, ReplicatedTableConfigurationStore configurationStore, Func<ReplicaInfo, TableServiceClient> GetReplicaTableClient)
         {
             View view = new View(name);
 
@@ -53,9 +53,7 @@ namespace Microsoft.Azure.Toolkit.Replication
                         continue;
                     }
 
-                    SetConnectionString(replica);
-
-                    TableServiceClient tableClient = ReplicatedTableConfigurationManager.GetTableClientForReplica(replica);
+                    TableServiceClient tableClient = GetReplicaTableClient(replica);
                     if (tableClient == null)
                     {
                         // All replicas MUST exist or View is not relevant
@@ -90,7 +88,7 @@ namespace Microsoft.Azure.Toolkit.Replication
             return view;
         }
 
-        public static View InitFromConfigVer2(string name, ReplicatedTableConfigurationStore configurationStore, Action<ReplicaInfo> SetConnectionString)
+        public static View InitFromConfigVer2(string name, ReplicatedTableConfigurationStore configurationStore, Func<ReplicaInfo, TableServiceClient> GetReplicaTableClient)
         {
             View view = new View(name);
 
@@ -101,9 +99,7 @@ namespace Microsoft.Azure.Toolkit.Replication
 
                 foreach (ReplicaInfo replica in configurationStore.GetCurrentReplicaChain())
                 {
-                    SetConnectionString(replica);
-
-                    TableServiceClient tableClient = ReplicatedTableConfigurationManager.GetTableClientForReplica(replica);
+                    TableServiceClient tableClient = GetReplicaTableClient(replica);
                     if (tableClient == null)
                     {
                         // All replicas MUST exist or View is not relevant
