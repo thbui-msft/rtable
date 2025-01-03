@@ -50,7 +50,6 @@ namespace Microsoft.Azure.Toolkit.Replication
             Dictionary<string, TokenCredential> replicaStorageTokenMap,
             bool useHttps,
             string storageEndpointDomain,
-            TokenCredential storageToken,
             int lockTimeoutInSeconds = 0)
         {
             this.configManager = new ReplicatedTableConfigurationManager(blobLocations, blobLocationsStorageToken, replicaStorageTokenMap, useHttps, storageEndpointDomain, lockTimeoutInSeconds, new ReplicatedTableConfigurationParser());
