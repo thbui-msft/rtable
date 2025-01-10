@@ -65,8 +65,11 @@ A comprehensive suite of tests can be found under the Test folder. To run unit t
 1. Build the entire solution including Tests.csproj
 2. Go to folder: test\bin
 3. Update the RTableTestConfiguration.xml to update the storage account names and keys (replace the ******). You need three storage accounts.
+  - The storage accounts must be configured with `Secure transfer required` set to `Disabled` for tests using the HttpMangler to succeed.
+  - If testing token auth, also update the `InteractiveLoginTenantId` with the subscription's tenant that houses the storage accounts mentioned above.
 4. Download nunit.Runners package
-5. Run nunit-console.exe test\bin\Microsoft.Azure.Toolkit.Replication.Test.dll to run all tests
+5. Run `nunit-console.exe test\bin\Microsoft.Azure.Toolkit.Replication.Test.dll to run all tests
+  - If nuget dependencies have already been installed, this exe can be found under `packages\NUnit.ConsoleRunner.3.6.1\tools\nunit3-console.exe`.
 
 ### NuGet
 
