@@ -48,21 +48,17 @@ namespace Microsoft.Azure.Toolkit.Replication
         public static BlobClient GetBlockBlob(string blobStorageEndpoint, TokenCredential blobToken, string configurationLocation)
         {
             BlobServiceClient blobClient = new BlobServiceClient(new Uri(blobStorageEndpoint), blobToken);
-            BlobContainerClient container = blobClient.GetBlobContainerClient(GetContainerName(configurationLocation));
-            if (container.CreateIfNotExists() != null)
-            {
-                using (StorageExtensions.CreateServiceTimeoutScope(TimeSpan.FromMinutes(10)))
-                {
-                    container.SetAccessPolicy(PublicAccessType.None);
-                }
-            }
-
-            return container.GetBlobClient(GetBlobName(configurationLocation));
+            return GetBlockBlobImpl(blobClient, configurationLocation);
         }
 
         public static BlobClient GetBlockBlob(string configurationStorageConnectionString, string configurationLocation)
         {
             BlobServiceClient blobClient = new BlobServiceClient(configurationStorageConnectionString);
+            return GetBlockBlobImpl(blobClient, configurationLocation);
+        }
+
+        private static BlobClient GetBlockBlobImpl(BlobServiceClient blobClient, string configurationLocation)
+        {
             BlobContainerClient container = blobClient.GetBlobContainerClient(GetContainerName(configurationLocation));
             if (container.CreateIfNotExists() != null)
             {
