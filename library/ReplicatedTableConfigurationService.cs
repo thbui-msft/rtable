@@ -21,6 +21,7 @@
 
 namespace Microsoft.Azure.Toolkit.Replication
 {
+    using global::Azure.Core;
     using System;
     using System.Collections.Generic;
     using System.Security;
@@ -60,6 +61,19 @@ namespace Microsoft.Azure.Toolkit.Replication
         public ReplicatedTableConfigurationService(List<ConfigurationStoreLocationInfo> blobLocations, Dictionary<string, SecureString> connectionStringMap, bool useHttps, int lockTimeoutInSeconds = 0)
         {
             this.configManager = new ReplicatedTableConfigurationManager(blobLocations, connectionStringMap, useHttps, lockTimeoutInSeconds, new ReplicatedTableConfigurationStoreParser());
+            this.configManager.StartMonitor();
+        }
+
+        /// <summary>
+        /// User provides all token credentials.
+        /// </summary>
+        /// <param name="blobLocations"></param>
+        /// <param name="connectionStringMap"></param>
+        /// <param name="useHttps"></param>
+        /// <param name="lockTimeoutInSeconds"></param>
+        public ReplicatedTableConfigurationService(List<ConfigurationStoreLocationInfo> blobLocations, TokenCredential blobLocationsStorageToken, Dictionary<string, TokenCredential> replicaStorageTokenMap, bool useHttps, string storageEndpointDomain, int lockTimeoutInSeconds = 0)
+        {
+            this.configManager = new ReplicatedTableConfigurationManager(blobLocations, blobLocationsStorageToken, replicaStorageTokenMap, useHttps, storageEndpointDomain, lockTimeoutInSeconds, new ReplicatedTableConfigurationStoreParser());
             this.configManager.StartMonitor();
         }
 

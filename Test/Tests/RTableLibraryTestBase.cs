@@ -38,7 +38,9 @@ namespace Microsoft.Azure.Toolkit.Replication.Test
     using System.Xml.Serialization;
     using System.Security;
     using global::Azure.Data.Tables;
+    using global::Azure.Identity;
     using global::Azure.Storage.Blobs;
+    using global::Azure.Core;
 
     public class RTableLibraryTestBase
     {
@@ -97,6 +99,43 @@ namespace Microsoft.Azure.Toolkit.Replication.Test
         private int clockFactor = 0;
         private int minimumLeaseRenewalInterval = 0;
         private int lockTimeoutInSeconds = 0;
+
+        /// <summary>
+        /// Used for token-based authentication testing to storage.
+        /// Cache the token credential from interactive login to avoid repeated prompts.
+        /// </summary>
+        private static TokenCredential s_interactiveLoginTokenCredential = null;
+        private static object _loginLock = new object();
+        private TokenCredential InteractiveLoginTokenCredential
+        {
+            get
+            {
+                if (s_interactiveLoginTokenCredential == null)
+                {
+                    lock (_loginLock)
+                    {
+                        if (s_interactiveLoginTokenCredential == null)
+                        {
+                            Guid tenantId = this.rtableTestConfiguration.RunnerInformation.InteractiveLoginTenantId;
+                            if (tenantId == Guid.Empty)
+                            {
+                                s_interactiveLoginTokenCredential = new InteractiveBrowserCredential();
+                            }
+                            else
+                            {
+                                s_interactiveLoginTokenCredential = new InteractiveBrowserCredential(
+                                    new InteractiveBrowserCredentialOptions()
+                                    {
+                                        TenantId = tenantId.ToString()
+                                    });
+                            }
+                        }
+                    }
+                }
+
+                return s_interactiveLoginTokenCredential;
+            }
+        }
 
         protected RTableLibraryTestBase()
         {
@@ -716,7 +755,25 @@ namespace Microsoft.Azure.Toolkit.Replication.Test
         {
             this.configurationInfos = this.GetRTableConfigurationLocationInfo(numberOfBlobs);
 
-            this.configurationService = new ReplicatedTableConfigurationServiceV2(this.configurationInfos, this.connectionStringMap, useHttps);
+            Guid tenantId = this.rtableTestConfiguration.RunnerInformation.InteractiveLoginTenantId;
+            if (useHttps && tenantId != Guid.Empty)
+            {
+                // TokenCredentials can only be used with https. Requirement from Azure Storage.
+                var replicaStorageTokenMap = new Dictionary<string, TokenCredential>();
+                this.connectionStringMap.Keys.ToList().ForEach(accountName =>
+                {
+                    replicaStorageTokenMap[accountName] = this.InteractiveLoginTokenCredential;
+                });
+                this.configurationService = new ReplicatedTableConfigurationServiceV2(this.configurationInfos,
+                    this.InteractiveLoginTokenCredential,
+                    replicaStorageTokenMap,
+                    useHttps,
+                    "core.windows.net");
+            }
+            else
+            {
+                this.configurationService = new ReplicatedTableConfigurationServiceV2(this.configurationInfos, this.connectionStringMap, useHttps);
+            }
 
             this.UploadRTableConfigToBlob(viewId, convertXStoreTableMode, numberOfBlobs);
 
