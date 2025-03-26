@@ -32,7 +32,7 @@ namespace Microsoft.Azure.Toolkit.Replication.Test
     using System.Threading.Tasks;
 
     /// <summary>
-    /// HttpMablger's Delay behavior is used in this set of tests. 
+    /// HttpMangler's Delay behavior is used in this set of tests. 
     /// </summary>
     [TestFixture]
     [Parallelizable(ParallelScope.None)]

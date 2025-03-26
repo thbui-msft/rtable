@@ -32,14 +32,33 @@ namespace Microsoft.Azure.Toolkit.Replication
     using global::Azure.Storage.Blobs;
     using global::Azure.Storage.Blobs.Models;
     using global::Azure;
+    using global::Azure.Core;
     using global::Azure.Data.Tables;
     using global::Azure.Storage;
 
     public class CloudBlobHelpers
     {
+        /// <summary>
+        /// Return a <see cref="BlobClient"/> for a given blob. Access to the blob is performed using managed identity auth.
+        /// </summary>
+        /// <param name="blobStorageEndpoint">URI to the blob storage endpoint. e.g. https://fooStorage.blob.core.windows.net</param>
+        /// <param name="blobToken">Token to access the blob storage.</param>
+        /// <param name="configurationLocation">Blob location relative to the storage root. e.g. container/blob.txt</param>
+        /// <returns></returns>
+        public static BlobClient GetBlockBlob(string blobStorageEndpoint, TokenCredential blobToken, string configurationLocation)
+        {
+            BlobServiceClient blobClient = new BlobServiceClient(new Uri(blobStorageEndpoint), blobToken);
+            return GetBlockBlobImpl(blobClient, configurationLocation);
+        }
+
         public static BlobClient GetBlockBlob(string configurationStorageConnectionString, string configurationLocation)
         {
             BlobServiceClient blobClient = new BlobServiceClient(configurationStorageConnectionString);
+            return GetBlockBlobImpl(blobClient, configurationLocation);
+        }
+
+        private static BlobClient GetBlockBlobImpl(BlobServiceClient blobClient, string configurationLocation)
+        {
             BlobContainerClient container = blobClient.GetBlobContainerClient(GetContainerName(configurationLocation));
             if (container.CreateIfNotExists() != null)
             {
@@ -586,6 +605,25 @@ namespace Microsoft.Azure.Toolkit.Replication
             {
                 ReplicatedTableLogger.LogError("Updating the blob: {0} failed. Exception: {1}", blob, e.Message);
             }
+        }
+
+        public static bool TryCreateCloudTableClient(string tableStorageEndpoint, TokenCredential tableToken, out TableServiceClient tableServiceClient)
+        {
+            tableServiceClient = null;
+
+            try
+            {
+                tableServiceClient = new TableServiceClient(new Uri(tableStorageEndpoint), tableToken);
+                return true;
+            }
+            catch (Exception e)
+            {
+                ReplicatedTableLogger.LogError(
+                    $"Error creating cloud table client: tableStorageEndpoint: {tableStorageEndpoint}." +
+                    $"Exception: {e.Message}");
+            }
+
+            return false;
         }
 
         public static bool TryCreateCloudTableClient(SecureString connectionString, out TableServiceClient tableServiceClient)

@@ -23,6 +23,7 @@ namespace Microsoft.Azure.Toolkit.Replication
 {
     using System;
     using System.Collections.Generic;
+    using global::Azure.Data.Tables;
     using global::Azure.Storage.Blobs;
 
     internal class ReplicatedTableConfigurationStoreParser : IReplicatedTableConfigurationParser
@@ -32,7 +33,7 @@ namespace Microsoft.Azure.Toolkit.Replication
 
         public List<View> ParseBlob(
                                 List<BlobClient> blobs,
-                                Action<ReplicaInfo> SetConnectionString,
+                                Func<ReplicaInfo, TableServiceClient> tableClientCreationStrategy,
                                 out List<ReplicatedTableConfiguredTable> tableConfigList,
                                 out int leaseDuration,
                                 out Guid configId,
@@ -63,7 +64,7 @@ namespace Microsoft.Azure.Toolkit.Replication
             /**
              * View:
              */
-            var view = View.InitFromConfigVer1(DefaultViewName, configurationStore, SetConnectionString);
+            var view = View.InitFromConfigVer1(DefaultViewName, configurationStore, tableClientCreationStrategy);
 
             if (view.ViewId <= 0)
             {
